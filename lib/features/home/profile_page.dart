@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sneakers_app/app/widgets/show_confirm_dialog.dart';
+import 'package:sneakers_app/core/utils/widgets/show_confirm_dialog.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
