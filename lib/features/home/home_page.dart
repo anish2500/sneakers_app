@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sneakers_app/features/shoes/presentation/state/product_state.dart';
+import 'package:sneakers_app/features/shoes/presentation/view_model/product_view_model.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   List<String> categories = ["All", "Running", "Casual", "Sport", "Limited"];
   int selectedIndex = 0;
 
@@ -24,14 +27,15 @@ class _HomePageState extends State<HomePage> {
   ];
   int selectedIndex2 = 0;
 
-  List<Color> colors = [
-    Colors.black,
-    Colors.red,
-    Colors.white,
-    Colors.grey,
-    Colors.green,
+  List<String> colors = [
+    'All Colors',
+    'Black',
+    'Red',
+    'White',
+    'Grey',
+    'Green',
   ];
-  int selectedColorIndex = 0;
+  String selectedColor = 'All Colors';
 
   List<String> shoes = [
     "assets/images/shoes1.jpg",
@@ -39,8 +43,64 @@ class _HomePageState extends State<HomePage> {
     "assets/images/shoes3.webp",
   ];
 
+  Color getColorFromName(String colorName) {
+    switch (colorName.toLowerCase()) {
+      case 'black':
+        return Colors.black;
+      case 'red':
+        return Colors.red;
+      case 'white':
+        return Colors.white;
+      case 'grey':
+        return Colors.grey;
+      case 'green':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(productViewModelProvider.notifier).getAllProducts();
+    });
+  }
+
+  void _fetchProducts() {
+    String? category;
+    String? brand;
+    String? size;
+    String? color;
+
+    if (selectedIndex > 0) {
+      category = categories[selectedIndex];
+    }
+
+    if (selectedIndex2 > 0) {
+      brand = brands[selectedIndex2];
+    }
+    if (selectedColor != 'All Colors') {
+      color = selectedColor.toLowerCase();
+    }
+    if (selectedIndex1 > 0) {
+      size = sizes[selectedIndex1];
+    }
+
+    ref
+        .read(productViewModelProvider.notifier)
+        .getAllProducts(
+          category: category,
+          brand: brand,
+          size: size,
+          color: color,
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final productState = ref.watch(productViewModelProvider);
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -129,6 +189,7 @@ class _HomePageState extends State<HomePage> {
                               setState(() {
                                 selectedIndex = index;
                               });
+                              _fetchProducts();
                             },
                             child: Container(
                               margin: EdgeInsets.symmetric(horizontal: 5),
@@ -184,6 +245,7 @@ class _HomePageState extends State<HomePage> {
                               setState(() {
                                 selectedIndex1 = index;
                               });
+                              _fetchProducts();
                             },
                             child: Container(
                               margin: EdgeInsets.symmetric(horizontal: 5),
@@ -240,6 +302,7 @@ class _HomePageState extends State<HomePage> {
                               setState(() {
                                 selectedIndex2 = index;
                               });
+                              _fetchProducts();
                             },
                             child: Container(
                               margin: EdgeInsets.symmetric(horizontal: 5),
@@ -289,12 +352,13 @@ class _HomePageState extends State<HomePage> {
                         scrollDirection: Axis.horizontal,
                         itemCount: colors.length,
                         itemBuilder: (context, index) {
-                          bool isSelected = selectedColorIndex == index;
+                          bool isSelected = selectedColor == colors[index];
                           return GestureDetector(
                             onTap: () {
                               setState(() {
-                                selectedColorIndex = index;
+                                selectedColor = colors[index];
                               });
+                              _fetchProducts();
                             },
                             child: Container(
                               margin: EdgeInsets.symmetric(horizontal: 5),
@@ -302,13 +366,15 @@ class _HomePageState extends State<HomePage> {
                               height: 40,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: colors[index],
-                                border: Border.all(color: Colors.black12),
+                                color: getColorFromName(colors[index]),
+                                border: Border.all(color: selectedColor == colors[index] ? Colors.blue : Colors.black, 
+                                width: selectedColor == colors[index]? 2: 1),
+                                
                               ),
                               child: isSelected
                                   ? Icon(
                                       Icons.check,
-                                      color: colors[index] == Colors.white
+                                      color: colors[index].toLowerCase() == 'white'
                                           ? Colors.black
                                           : Colors.white,
                                     )
@@ -336,29 +402,8 @@ class _HomePageState extends State<HomePage> {
                     ),
                     SizedBox(height: 5),
                     SizedBox(
-                      height: 150,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.symmetric(horizontal: 10),
-                        itemCount: shoes.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            width: 150,
-                            margin: const EdgeInsets.only(right: 15),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Image.asset(
-                                shoes[index],
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                      height: 187,
+                      child: _buildProductList(productState),
                     ),
                     SizedBox(height: 20),
                   ],
@@ -368,6 +413,114 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProductList(ProductState productState) {
+    if (productState.status == ProductStatus.loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (productState.status == ProductStatus.error) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              productState.errorMessage ?? 'Erro loading products',
+              style: TextStyle(color: Colors.red),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _fetchProducts,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (productState.products.isEmpty) {
+      return const Center(child: Text('No products available'));
+    }
+
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: EdgeInsets.symmetric(horizontal: 10),
+      itemCount: productState.products.length,
+      itemBuilder: (context, index) {
+        final product = productState.products[index];
+        return Container(
+          width: 150,
+          height: 210,
+          margin: const EdgeInsets.only(right: 15),
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                child:
+                    (product.shoesImage != null &&
+                        product.shoesImage!.isNotEmpty)
+                    ? Image.network(
+                        'http://192.168.18.4:5000${product.shoesImage}',
+                        height: 120,
+                        width: 150,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 120,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image, size: 50),
+                          );
+                        },
+                      )
+                    : Container(
+                        height: 120,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.sports_soccer, size: 50),
+                      ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.shoesName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        product.brand,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                      ),
+                      Text(
+                        '\$${product.price.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
