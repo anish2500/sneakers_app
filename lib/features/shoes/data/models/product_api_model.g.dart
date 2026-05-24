@@ -8,7 +8,7 @@ part of 'product_api_model.dart';
 
 ProductApiModel _$ProductApiModelFromJson(Map<String, dynamic> json) =>
     ProductApiModel(
-      id: json['_id'] as String,
+      id: json['_id'] as String?,
       shoesName: json['shoesName'] as String,
       brand: json['brand'] as String,
       price: (json['price'] as num).toDouble(),

@@ -7,7 +7,7 @@ part 'product_api_model.g.dart';
 @JsonSerializable()
 class ProductApiModel {
   @JsonKey(name: '_id')
-  final String id;
+  final String? id;
   final String shoesName;
   final String brand;
   final double price;

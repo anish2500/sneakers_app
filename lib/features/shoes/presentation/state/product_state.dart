@@ -7,11 +7,13 @@ class ProductState extends Equatable {
   final ProductStatus status;
   final List<ProductEntity> products;
   final String? errorMessage;
+  final bool isFromCache; 
 
   const ProductState({
     required this.status,
     this.products = const [],
     this.errorMessage,
+    this.isFromCache = false, 
   });
 
   factory ProductState.initial() {
@@ -22,14 +24,16 @@ class ProductState extends Equatable {
     ProductStatus? status,
     List<ProductEntity>? products,
     String? errorMessage,
+    bool ? isFromCache, 
   }) {
     return ProductState(
       status: status ?? this.status,
       products: products ?? this.products,
       errorMessage: errorMessage ?? this.errorMessage,
+      isFromCache: isFromCache ?? this.isFromCache, 
     );
   }
 
   @override
-  List<Object?> get props => [status, products, errorMessage];
+  List<Object?> get props => [status, products, errorMessage, isFromCache];
 }

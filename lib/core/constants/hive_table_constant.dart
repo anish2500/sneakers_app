@@ -4,4 +4,8 @@ class HiveTableConstant {
   static const String dbName = 'snikrz_hive_db';
   static const String authTable = 'auth_box';
   static const int authTypeId = 0; 
+
+
+  static const String productTable = 'product_table';
+  static const int productTypeId = 1; 
 }
