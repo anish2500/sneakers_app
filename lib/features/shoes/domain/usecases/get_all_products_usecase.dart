@@ -11,7 +11,7 @@ class GetAllProductsParams extends Equatable {
   final String? category;
   final String? brand;
   final String? size;
-  final String? color; 
+  final String? color;
 
   const GetAllProductsParams({this.category, this.brand, this.size, this.color});
 
@@ -27,15 +27,22 @@ final getAllProductsUsecaseProvider = Provider<GetAllProductsUsecase>((ref) {
 class GetAllProductsUsecase
     implements Usecase<List<ProductEntity>, GetAllProductsParams> {
   final IProductRepository _productRepository;
+
   GetAllProductsUsecase({required IProductRepository productRepository})
-    : _productRepository = productRepository;
+      : _productRepository = productRepository;
+
   @override
   Future<Either<Failure, List<ProductEntity>>> call(
     GetAllProductsParams params,
-  ) {
-    return _productRepository.getAllProducts(
-      category: params.category,
-      brand: params.brand,
-    );
+  ) async {
+    try {
+      final products = await _productRepository.getAllProducts(
+        category: params.category,
+        brand: params.brand,
+      );
+      return Right(products);
+    } catch (e) {
+      return Left(ApiFailure(message: e.toString()));
+    }
   }
 }
